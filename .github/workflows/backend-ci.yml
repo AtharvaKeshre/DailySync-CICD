@@ -40,3 +40,23 @@ jobs:
         working-directory: backend
         run: mvn clean package -DskipTests
 
+      - name: Deploy to EC2
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/target/*.jar"
+          target: "/home/ec2-user/dailysync/app.jar"
+
+      - name: Restart Spring Boot App on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            pkill -f 'java -jar' || true
+            nohup java -jar /home/ec2-user/dailysync/app.jar > app.log 2>&1 &
+
