@@ -1,0 +1,22 @@
+#spring.application.name=JournalApp
+##spring.data.mongodb.host=localhost
+##spring.data.mongodb.port=27017
+#spring.security.user.name=user
+#spring.data.mongodb.database=journaldb
+#spring.data.mongodb.auto-index-creation=true
+#spring.data.mongodb.uri=
+#spring.main.allow-circular-references=true
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://atharva:Mymongodb%401@cluster0.fdebu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      database: journaldb
+      auto-index-creation: true
+  main:
+    allow-circular-references: true
+
+server:
+  port: 8090
+  servlet:
+    context-path: /journal

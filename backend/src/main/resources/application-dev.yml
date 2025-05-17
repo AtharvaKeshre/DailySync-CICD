@@ -1,0 +1,76 @@
+#spring.application.name=JournalApp
+##spring.data.mongodb.host=localhost
+##spring.data.mongodb.port=27017
+#spring.security.user.name=user
+#spring.data.mongodb.database=journaldb
+#spring.data.mongodb.auto-index-creation=true
+#spring.data.mongodb.uri=
+#spring.main.allow-circular-references=true
+
+spring:
+  data:
+    mongodb:
+      uri: ${DATABASE_URL}
+      database: ${DATABASE_ACTIVE}
+      auto-index-creation: true
+    redis:
+      host: ${REDIS_HOST}
+      port: 11150
+      password: ${REDIS_PASSWORD}
+      timeout: 6000
+  main:
+    allow-circular-references: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GOOGLE_APP_USERNAME}
+    password: ${GOOGLE_APP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: weekly-sentiment-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: com.atharva.backend.model
+    properties:
+      security:
+        protocol: SASL_SSL
+      sasl:
+        mechanism: PLAIN
+        jaas:
+          config: org.apache.kafka.common.security.plain.PlainLoginModule required username='X' password='X';
+      session:
+        timeout:
+          ms: 45000
+
+server:
+  port: 8080
+  servlet:
+    context-path: /dailysync
+
+logging:
+  level:
+    com:
+      atharva:
+        backend: DEBUG
+weather:
+  api:
+    key: ${WEATHER_APP_KEY}
+
+
+#logging:
+#  level:
+#    root: OFF ya to fir ERROR
