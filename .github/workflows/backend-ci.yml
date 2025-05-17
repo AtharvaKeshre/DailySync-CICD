@@ -19,6 +19,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Check Java version
+        run: java -version
+
+      - name: Check Maven version
+        run: mvn -version
+
       - name: Create .env file
         working-directory: backend
         run: |
@@ -40,7 +46,7 @@ jobs:
         working-directory: backend
         run: mvn clean package -DskipTests
 
-      - name: Deploy to EC2
+      - name: Deploy JAR to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -49,7 +55,7 @@ jobs:
           source: "backend/target/DailySync-0.0.1-SNAPSHOT.jar"
           target: "/home/ec2-user/dailysync/"
 
-      - name: Upload start.sh
+      - name: Upload start.sh to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -59,6 +65,17 @@ jobs:
           target: "/home/ec2-user/dailysync/"
           strip_components: 1
 
+      - name: Verify Deployment Directory and Files
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Checking directory contents..."
+            ls -lh /home/ec2-user/dailysync/
+            echo "Checking Java version on EC2..."
+            java -version
 
       - name: Restart Spring Boot App on EC2
         uses: appleboy/ssh-action@master
@@ -69,8 +86,3 @@ jobs:
           script: |
             chmod +x /home/ec2-user/dailysync/start.sh
             bash /home/ec2-user/dailysync/start.sh
-      
-      
-          
-          
-      
