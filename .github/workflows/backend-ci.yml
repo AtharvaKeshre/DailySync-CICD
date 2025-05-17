@@ -42,6 +42,15 @@ jobs:
           echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
           echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
 
+      - name: Upload .env file to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/.env"
+          target: "/home/ec2-user/dailysync/"
+
       - name: Build with Maven
         working-directory: backend
         run: mvn clean package -DskipTests
