@@ -66,8 +66,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            chmod +x /home/ec2-user/dailysync/start.sh
-            bash /home/ec2-user/dailysync/start.sh
+            chmod +x /home/ec2-user/dailysync/backend/start.sh
+            bash /home/ec2-user/dailysync/backend/start.sh
       
       
           
