@@ -58,10 +58,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set +e  # allow script to continue even if pkill returns non-zero
-
             echo "Stopping any running Spring Boot instance..."
-            pkill -f 'java -jar'
+            pkill -f 'java -jar' || echo "No existing app to stop."
 
             echo "Waiting briefly before restart..."
             sleep 2
@@ -70,6 +68,6 @@ jobs:
             nohup java -jar /home/ec2-user/dailysync/app.jar > /home/ec2-user/app.log 2>&1 &
 
             echo "Spring Boot app deployed and running in background."
-            sleep 3
+            sleep 2
           
       
