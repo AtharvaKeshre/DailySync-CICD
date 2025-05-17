@@ -19,8 +19,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build Backend with Maven
+      - name: Create .env file
+        working-directory: backend
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+          echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> .env
+          echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
+          echo "KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}" >> .env
+          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+          echo "GOOGLE_APP_USERNAME=${{ secrets.GOOGLE_APP_USERNAME }}" >> .env
+          echo "GOOGLE_APP_PASSWORD=${{ secrets.GOOGLE_APP_PASSWORD }}" >> .env
+          echo "KAFKA_SERVER=${{ secrets.KAFKA_SERVER }}" >> .env
+          echo "WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}" >> .env
+          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
+          echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
+
+      - name: Build with Maven
         working-directory: backend
         run: mvn clean package -DskipTests
-
 
