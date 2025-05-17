@@ -51,6 +51,15 @@ jobs:
           target: "/home/ec2-user/dailysync/app.jar"
 
 
+      - name: Upload start.sh
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/start.sh"
+          target: "/home/ec2-user/dailysync/start.sh"
+
       - name: Restart Spring Boot App on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -58,18 +67,9 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Stopping any running Spring Boot instance..."
-            pkill -f 'java -jar' || echo "No existing app to stop."
-
-            echo "Waiting briefly before restart..."
-            sleep 2
-
-            echo "Launching app with nohup in background..."
-            nohup java -jar /home/ec2-user/dailysync/app.jar > /home/ec2-user/app.log 2>&1 &
-            disown
-
-            echo "Spring Boot app deployed and running in background."
-            sleep 2
+            chmod +x /home/ec2-user/dailysync/start.sh
+            bash /home/ec2-user/dailysync/start.sh
+      
           
           
       
