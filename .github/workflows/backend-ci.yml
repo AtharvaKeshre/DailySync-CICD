@@ -58,8 +58,10 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set +e  # allow script to continue even if pkill returns non-zero
+
             echo "Stopping any running Spring Boot instance..."
-            pkill -f 'java -jar' || true
+            pkill -f 'java -jar'
 
             echo "Waiting briefly before restart..."
             sleep 2
@@ -69,4 +71,5 @@ jobs:
 
             echo "Spring Boot app deployed and running in background."
             sleep 3
+          
       
