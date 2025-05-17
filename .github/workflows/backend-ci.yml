@@ -66,8 +66,10 @@ jobs:
 
             echo "Launching app with nohup in background..."
             nohup java -jar /home/ec2-user/dailysync/app.jar > /home/ec2-user/app.log 2>&1 &
+            disown
 
             echo "Spring Boot app deployed and running in background."
             sleep 2
+          
           
       
