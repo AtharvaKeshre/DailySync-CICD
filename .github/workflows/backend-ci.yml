@@ -58,9 +58,15 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Killing any existing Spring Boot process..."
+            echo "Stopping any running Spring Boot instance..."
             pkill -f 'java -jar' || true
 
-            echo "Starting Spring Boot app with nohup..."
+            echo "Waiting briefly before restart..."
+            sleep 2
+
+            echo "Launching app with nohup in background..."
             nohup java -jar /home/ec2-user/dailysync/app.jar > /home/ec2-user/app.log 2>&1 &
+
+            echo "Spring Boot app deployed and running in background."
+            sleep 3
       
