@@ -50,6 +50,7 @@ jobs:
           source: "backend/target/*.jar"
           target: "/home/ec2-user/dailysync/app.jar"
 
+
       - name: Restart Spring Boot App on EC2
         uses: appleboy/ssh-action@master
         with:
