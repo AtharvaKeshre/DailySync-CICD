@@ -70,6 +70,7 @@ jobs:
             chmod +x /home/ec2-user/dailysync/start.sh
             bash /home/ec2-user/dailysync/start.sh
       
+      
           
           
       
