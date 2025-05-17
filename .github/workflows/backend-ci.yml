@@ -81,10 +81,20 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Checking directory contents..."
+            echo "📁 Listing /home/ec2-user/dailysync contents..."
             ls -lh /home/ec2-user/dailysync/
-            echo "Checking Java version on EC2..."
+
+            echo "🔍 Checking if .env file exists..."
+            if [ -f /home/ec2-user/dailysync/.env ]; then
+              echo ".env file found. Contents:"
+              cat /home/ec2-user/dailysync/.env
+            else
+              echo "❌ .env file NOT found!"
+            fi
+
+            echo "☕ Java version on EC2:"
             java -version
+      
 
       - name: Restart Spring Boot App on EC2
         uses: appleboy/ssh-action@master
