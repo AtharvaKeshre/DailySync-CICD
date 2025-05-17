@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/start.sh"
-          target: "/home/ec2-user/dailysync/"
+          target: "/home/ec2-user/dailysync/backend/"
 
       - name: Restart Spring Boot App on EC2
         uses: appleboy/ssh-action@master
