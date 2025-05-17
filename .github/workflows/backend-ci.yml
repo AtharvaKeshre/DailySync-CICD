@@ -51,6 +51,7 @@ jobs:
           source: "backend/.env"
           target: "/home/ec2-user/dailysync/"
 
+
       - name: Build with Maven
         working-directory: backend
         run: mvn clean package -DskipTests
@@ -105,3 +106,5 @@ jobs:
           script: |
             chmod +x /home/ec2-user/dailysync/start.sh
             bash /home/ec2-user/dailysync/start.sh
+
+
