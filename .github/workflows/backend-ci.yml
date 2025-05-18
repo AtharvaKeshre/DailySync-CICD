@@ -32,6 +32,18 @@ jobs:
       - name: Publish image to docker hub
         run: docker push atharvakeshre08/springboot-example:latest
 
+      - name: Install Node.js and PM2 on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo yum install -y nodejs
+            sudo npm install -g pm2
+
+
       - name: Upload frontend to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -40,6 +52,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "frontend"
           target: "/home/ec2-user/"
+
+
 
       - name: Build and run frontend on EC2 with PM2
         uses: appleboy/ssh-action@v1.0.3
