@@ -1,4 +1,4 @@
-name: CI - Fullstack Deployment
+name: CI/CD - DailySync Fullstack Deploy
 
 on:
   push:
@@ -13,15 +13,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      # ---------- BACKEND: Build + Docker Push ----------
-
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build Spring Boot with Maven
+      - name: Build Spring Boot backend
         working-directory: backend
         run: mvn clean package -DskipTests
 
@@ -34,7 +32,32 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: docker push atharvakeshre08/springboot-example:latest
 
-      # ---------- FRONTEND: Upload + PM2 Setup ----------
+      # ---- Frontend: Build Next.js App ----
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Archive frontend build
+        working-directory: frontend
+        run: tar -czf ../frontend-build.tar.gz .next node_modules public package.json
+
+      - name: Upload frontend build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "frontend-build.tar.gz"
+          target: "/home/ec2-user/"
 
       - name: Install Node.js and PM2 on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -43,44 +66,32 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            if ! command -v node >/dev/null; then
-              curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-              sudo yum install -y nodejs
-              sudo npm install -g pm2
-            fi
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo yum install -y nodejs
+            sudo npm install -g pm2
 
-      - name: Upload frontend code to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "frontend"
-          target: "/home/ec2-user/"
-
-      - name: Build and start frontend with PM2
+      - name: Deploy frontend on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ec2-user/frontend
-            npm install --f
-            npm run build
+            cd /home/ec2-user
+            rm -rf frontend || true
+            mkdir frontend
+            tar -xzf frontend-build.tar.gz -C frontend
+            cd frontend
             pm2 delete frontend || true
-            pm2 start npm --name frontend -- run start
+            pm2 start "npm run start" --name frontend
             pm2 save
 
   deploy:
     needs: build
-    runs-on: [ aws-ec2 ]
+    runs-on: [aws-ec2]
 
     steps:
-      - name: Clean up old .env
-        run: rm -rf .env
-
-      - name: Create .env file from GitHub Secrets
+      - name: Create .env from secrets
         run: |
           cat > .env <<EOF
           DATABASE_URL=${{ secrets.DATABASE_URL }}
@@ -98,18 +109,19 @@ jobs:
           DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}
           EOF
 
-      - name: Pull latest backend image from Docker Hub
+      - name: Pull Docker image
         run: docker pull atharvakeshre08/springboot-example:latest
 
-      - name: Remove old backend container
+      - name: Remove old container
         run: docker rm -f springboot-example-container || true
 
-      - name: Run new backend container with .env mounted
+      - name: Run new container with .env
         run: |
           docker run -d -p 8080:8080 \
           -v $(pwd)/.env:/app/.env \
           --name springboot-example-container \
           atharvakeshre08/springboot-example
+
 
 #      - name: Create .env file
 #        working-directory: backend
