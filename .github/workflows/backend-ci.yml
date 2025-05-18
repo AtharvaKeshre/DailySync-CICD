@@ -1,4 +1,4 @@
-name: CI - Build & Test Spring Boot Backend
+name: CI - Fullstack Deployment
 
 on:
   push:
@@ -13,24 +13,28 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
+      # ---------- BACKEND: Build + Docker Push ----------
+
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build with Maven
+      - name: Build Spring Boot with Maven
         working-directory: backend
         run: mvn clean package -DskipTests
 
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Build docker image
+      - name: Build Docker image
         run: docker build -t atharvakeshre08/springboot-example ./backend
 
-      - name: Publish image to docker hub
+      - name: Push Docker image to Docker Hub
         run: docker push atharvakeshre08/springboot-example:latest
+
+      # ---------- FRONTEND: Upload + PM2 Setup ----------
 
       - name: Install Node.js and PM2 on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -39,12 +43,13 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-            sudo yum install -y nodejs
-            sudo npm install -g pm2
+            if ! command -v node >/dev/null; then
+              curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+              sudo yum install -y nodejs
+              sudo npm install -g pm2
+            fi
 
-
-      - name: Upload frontend to EC2
+      - name: Upload frontend code to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -53,9 +58,7 @@ jobs:
           source: "frontend"
           target: "/home/ec2-user/"
 
-
-
-      - name: Build and run frontend on EC2 with PM2
+      - name: Build and start frontend with PM2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -67,14 +70,14 @@ jobs:
             npm run build
             pm2 delete frontend || true
             pm2 start npm --name frontend -- run start
-
-
+            pm2 save
 
   deploy:
     needs: build
     runs-on: [ aws-ec2 ]
+
     steps:
-      - name: Clean up any existing .env
+      - name: Clean up old .env
         run: rm -rf .env
 
       - name: Create .env file from GitHub Secrets
@@ -93,19 +96,21 @@ jobs:
           WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}
           DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
           DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}
+          EOF
 
-      - name: Pull Image from docker hub
+      - name: Pull latest backend image from Docker Hub
         run: docker pull atharvakeshre08/springboot-example:latest
 
-      - name: Delete old container
-        run: docker rm -f springboot-example-container
+      - name: Remove old backend container
+        run: docker rm -f springboot-example-container || true
 
-      - name: Run Docker container with mounted .env
+      - name: Run new backend container with .env mounted
         run: |
           docker run -d -p 8080:8080 \
           -v $(pwd)/.env:/app/.env \
           --name springboot-example-container \
           atharvakeshre08/springboot-example
+
 #      - name: Create .env file
 #        working-directory: backend
 #        run: |
