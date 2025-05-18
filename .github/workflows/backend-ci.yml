@@ -32,6 +32,27 @@ jobs:
       - name: Publish image to docker hub
         run: docker push atharvakeshre08/springboot-example:latest
 
+      - name: Upload frontend to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "frontend"
+          target: "/home/ec2-user/"
+
+      - name: Build and run frontend on EC2 with PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user/frontend
+            npm install
+            npm run build
+            pm2 delete frontend || true
+            pm2 start npm --name frontend -- run start
 
 
 
