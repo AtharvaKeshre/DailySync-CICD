@@ -19,6 +19,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build app
+        working-directory: backend
         run: mvn clean package -DskipTests
 
       - name: Create .env file
@@ -67,3 +68,9 @@ jobs:
 
 
 
+
+
+
+
+
+       
