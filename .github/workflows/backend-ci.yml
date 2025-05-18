@@ -40,8 +40,8 @@ jobs:
     runs-on: [ aws-ec2 ]
     steps:
       - name: Clean up any existing .env
-        run: |
-          [ -d .env ] && rm -rf .env
+        run: rm -rf .env
+
       - name: Create .env file from GitHub Secrets
         run: |
           cat > .env <<EOF
