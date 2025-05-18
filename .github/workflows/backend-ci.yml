@@ -82,17 +82,27 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             bash -c '
+            # Using a heredoc with bash for better control and to avoid potential issues
+            # with how appleboy/ssh-action handles complex script strings.
+            # The -s option allows bash to read commands from standard input.
+            bash -s <<'EOF_SCRIPT_BLOCK'
             set -e
             
+            set -x # Enable command tracing for debugging
+
             echo ">>> Deployment script started on EC2"
             
+            
             APP_NAME="DailySync-0.0.1-SNAPSHOT.jar"
-            APP_USER="ec2-user" 
+            APP_USER="ec2-user" # Assuming this is the user running the app
+            # Use the username from secrets, assuming it's the correct one for the home directory
+            APP_USER="${{ secrets.EC2_USERNAME }}"
             DEPLOY_BASE_DIR="/home/${APP_USER}/dailysync"
             TARGET_DIR="${DEPLOY_BASE_DIR}/backend/target"
             ENV_FILE_SOURCE="${DEPLOY_BASE_DIR}/.env"
             ENV_FILE_DEST="${TARGET_DIR}/.env"
             LOG_FILE="${TARGET_DIR}/app.log"
+            
             
             echo ">>> Attempting to stop existing ${APP_NAME} application..."
             # Find PID more reliably, specific to the JAR name
@@ -100,11 +110,15 @@ jobs:
             if [ -n "$PID" ]; then
               echo ">>> Found existing ${APP_NAME} process with PID $PID. Terminating..."
               kill "$PID"
+              # Add || true to prevent script exit if process already dead
+              kill "$PID" || echo "Process $PID may have already exited."
               # Wait a bit for it to terminate gracefully
               sleep 5 
+              sleep 5
               if ps -p "$PID" > /dev/null; then
                 echo ">>> Process $PID did not terminate, forcing kill (-9)..."
                 kill -9 "$PID"
+                kill -9 "$PID" || echo "Force kill of $PID may have failed or it exited."
               else
                 echo ">>> Process $PID terminated successfully."
               fi
@@ -112,8 +126,10 @@ jobs:
               echo ">>> No existing ${APP_NAME} process found."
             fi
             
+            
             echo ">>> Ensuring target directory exists: ${TARGET_DIR}"
             mkdir -p "${TARGET_DIR}"
+            
             
             echo ">>> Moving .env file from ${ENV_FILE_SOURCE} to ${ENV_FILE_DEST}"
             if [ -f "${ENV_FILE_SOURCE}" ]; then
@@ -122,16 +138,20 @@ jobs:
               echo ">>> WARNING: ${ENV_FILE_SOURCE} not found. Application might not start correctly if it relies on it."
             fi
             
+            
             echo ">>> Changing to application directory: ${TARGET_DIR}"
             cd "${TARGET_DIR}"
+            
             
             echo ">>> Starting ${APP_NAME}. Output will be logged to ${LOG_FILE}"
             nohup java -jar "${APP_NAME}" > "${LOG_FILE}" 2>&1 &
             NOHUP_PID=$!
             echo ">>> ${APP_NAME} launched with PID ${NOHUP_PID}."
             
+            
             echo ">>> Waiting for 10 seconds to allow the application to stabilize and detach..."
             sleep 10
+            
             
             if ps -p "${NOHUP_PID}" > /dev/null; then
               echo ">>> ${APP_NAME} (PID ${NOHUP_PID}) is running after 10s."
@@ -139,10 +159,13 @@ jobs:
               echo ">>> CRITICAL: ${APP_NAME} (PID ${NOHUP_PID}) is NOT running after 10s. Check ${LOG_FILE} on the EC2 instance for errors."
               # Consider exiting with an error if the process isn't running, to make the GitHub Action step fail clearly.
               # exit 1 
+              # exit 1 # Uncomment this line if you want the job to fail here
             fi
+            
             
             echo ">>> Deployment script finished."
             '
+            EOF_SCRIPT_BLOCK
       
       
 
