@@ -82,9 +82,12 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             pkill -f 'java -jar' || echo "Nothing to kill"
-            cd /home/ec2-user/dailysync/backend/
-            mv .env target/
+            cd /home/ec2-user/dailysync
+            mkdir -p backend/target
+            mv .env backend/target/.env
             cd backend/target
-            java -jar DailySync-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            nohup java -jar DailySync-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            disown
+      
       
 
