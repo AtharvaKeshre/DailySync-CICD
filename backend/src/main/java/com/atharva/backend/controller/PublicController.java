@@ -32,7 +32,7 @@ public class PublicController {
 
     @GetMapping("/healthcheck")
     public String healthCheck() {
-        return "OK";
+        return "OK we are healthy";
     }
 
     @PostMapping("/signup")
