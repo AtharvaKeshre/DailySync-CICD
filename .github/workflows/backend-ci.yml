@@ -1,11 +1,12 @@
-name: CI/CD - Deploy Spring Boot to EC2
+name: CI - Build & Test Spring Boot Backend
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+  pull_request:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +25,6 @@ jobs:
 
       - name: Create .env file
         run: |
-          mkdir -p backend
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> .env
           echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
@@ -46,7 +46,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: |
-            target/*.jar
+            backend/target/*.jar
             backend/.env
           target: "~/app"
 
@@ -64,14 +64,3 @@ jobs:
             cd ~/app/target
             nohup java -jar app.jar > app.log 2>&1 &
 
-
-
-
-
-
-
-
-
-
-
-       
