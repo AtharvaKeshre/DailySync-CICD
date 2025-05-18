@@ -1,12 +1,11 @@
-name: CI - Build & Test Spring Boot Backend
+name: CI/CD - Deploy Spring Boot to EC2
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+    branches: [main]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,14 +18,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Check Java version
-        run: java -version
-
-      - name: Check Maven version
-        run: mvn -version
+      - name: Build app
+        run: mvn clean package -DskipTests
 
       - name: Create .env file
-        working-directory: backend
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> .env
@@ -42,69 +37,33 @@ jobs:
           echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
           echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
 
-      - name: Upload .env file to EC2
-        uses: appleboy/scp-action@v0.1.4
+      - name: Copy JAR and .env to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/.env"
-          target: "/home/ec2-user/dailysync/"
+          source: |
+            target/*.jar
+            backend/.env
+          target: "~/app"
 
-
-      - name: Build with Maven
-        working-directory: backend
-        run: mvn clean package -DskipTests
-
-      - name: Deploy JAR to EC2
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/target/DailySync-0.0.1-SNAPSHOT.jar"
-          target: "/home/ec2-user/dailysync/"
-
-      - name: Upload start.sh to EC2
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/start.sh"
-          target: "/home/ec2-user/dailysync/"
-
-
-      - name: Verify Deployment Directory and Files
-        uses: appleboy/ssh-action@master
+      - name: SSH and deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "📁 Listing /home/ec2-user/dailysync contents..."
-            ls -lh /home/ec2-user/dailysync/
+            pkill -f 'java -jar' || echo "Nothing to kill"
+            mkdir -p ~/app/target
+            mv ~/app/*.jar ~/app/target/app.jar
+            mv ~/app/.env ~/app/target/.env
+            cd ~/app/target
+            nohup java -jar app.jar > app.log 2>&1 &
 
-            echo "🔍 Checking if .env file exists..."
-            if [ -f /home/ec2-user/dailysync/.env ]; then
-              echo ".env file found. Contents:"
-              cat /home/ec2-user/dailysync/.env
-            else
-              echo "❌ .env file NOT found!"
-            fi
 
-            echo "☕ Java version on EC2:"
-            java -version
-      
 
-      - name: Restart Spring Boot App on EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            chmod +x /home/ec2-user/dailysync/start.sh
-            bash /home/ec2-user/dailysync/start.sh
+
 
 
