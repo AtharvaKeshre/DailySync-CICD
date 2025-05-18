@@ -32,42 +32,39 @@ jobs:
       - name: Publish image to docker hub
         run: docker push atharvakeshre08/springboot-example:latest
 
-      - name: Create .env file
+      - name: Create .env file from GitHub Secrets
         run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-          echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> .env
-          echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
-          echo "KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}" >> .env
-          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
-          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
-          echo "GOOGLE_APP_USERNAME=${{ secrets.GOOGLE_APP_USERNAME }}" >> .env
-          echo "GOOGLE_APP_PASSWORD=${{ secrets.GOOGLE_APP_PASSWORD }}" >> .env
-          echo "KAFKA_SERVER=${{ secrets.KAFKA_SERVER }}" >> .env
-          echo "WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}" >> .env
-          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
-          echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
-
-      - name: Run docker container with env file
-        run: |
-          docker run -d -p 8080:8080 \
-            --env-file .env \
-            -v $(pwd)/.env:/app/.env \
-            --name springboot-example-container \
-            atharvakeshre08/springboot-example
-
+          cat > .env <<EOF
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}
+          KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}
+          KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}
+          DATABASE_USER=${{ secrets.DATABASE_USER }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          GOOGLE_APP_USERNAME=${{ secrets.GOOGLE_APP_USERNAME }}
+          GOOGLE_APP_PASSWORD=${{ secrets.GOOGLE_APP_PASSWORD }}
+          KAFKA_SERVER=${{ secrets.KAFKA_SERVER }}
+          WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}
+          DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}
 
 
   deploy:
     needs: build
     runs-on: [ aws-ec2 ]
     steps:
+      -
       - name: Pull Image from docker hub
         run: docker pull atharvakeshre08/springboot-example:latest
       - name: Delete old container
         run: docker rm -f springboot-example-container
-      - name: Run docker container
-        run: docker run -d -p 8080:8080 --name springboot-example-container atharvakeshre08/springboot-example
+      - name: Run Docker container with mounted .env
+        run: |
+          docker run -d -p 8080:8080 \
+          -v $(pwd)/.env:/app/.env \
+          --name springboot-example-container \
+          atharvakeshre08/springboot-example
 #      - name: Create .env file
 #        working-directory: backend
 #        run: |
