@@ -24,6 +24,7 @@ jobs:
 
       - name: Create .env file
         run: |
+          mkdir -p backend
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> .env
           echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
