@@ -25,19 +25,20 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-          echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> .env
-          echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
-          echo "KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}" >> .env
-          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
-          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
-          echo "GOOGLE_APP_USERNAME=${{ secrets.GOOGLE_APP_USERNAME }}" >> .env
-          echo "GOOGLE_APP_PASSWORD=${{ secrets.GOOGLE_APP_PASSWORD }}" >> .env
-          echo "KAFKA_SERVER=${{ secrets.KAFKA_SERVER }}" >> .env
-          echo "WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}" >> .env
-          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
-          echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > backend/.env
+          echo "KAFKA_SERVERS=${{ secrets.KAFKA_SERVERS }}" >> backend/.env
+          echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> backend/.env
+          echo "KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}" >> backend/.env
+          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> backend/.env
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> backend/.env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> backend/.env
+          echo "GOOGLE_APP_USERNAME=${{ secrets.GOOGLE_APP_USERNAME }}" >> backend/.env
+          echo "GOOGLE_APP_PASSWORD=${{ secrets.GOOGLE_APP_PASSWORD }}" >> backend/.env
+          echo "KAFKA_SERVER=${{ secrets.KAFKA_SERVER }}" >> backend/.env
+          echo "WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}" >> backend/.env
+          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> backend/.env
+          echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> backend/.env
+      
 
       - name: Copy JAR and .env to EC2
         uses: appleboy/scp-action@v0.1.7
