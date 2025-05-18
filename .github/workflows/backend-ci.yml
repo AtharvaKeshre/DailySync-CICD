@@ -19,9 +19,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build app
-        working-directory: backend
-        run: mvn clean package -DskipTests
+      - name: Check Java version
+        run: java -version
+
+      - name: Check Maven version
+        run: mvn -version
 
       - name: Create .env file
         working-directory: backend
@@ -39,18 +41,38 @@ jobs:
           echo "WEATHER_APP_KEY=${{ secrets.WEATHER_APP_KEY }}" >> .env
           echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
           echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
-      
 
-      - name: Copy JAR and .env to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: Upload .env file to EC2
+        uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: |
-            backend/target/*.jar
-            backend/.env
+          source: "backend/.env"
           target: "/home/ec2-user/dailysync/"
+
+      - name: Build with Maven
+        working-directory: backend
+        run: mvn clean package -DskipTests
+
+      - name: Deploy JAR to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/target/DailySync-0.0.1-SNAPSHOT.jar"
+          target: "/home/ec2-user/dailysync/"
+
+#      - name: Upload start.sh to EC2
+#        uses: appleboy/scp-action@v0.1.4
+#        with:
+#          host: ${{ secrets.EC2_HOST }}
+#          username: ${{ secrets.EC2_USERNAME }}
+#          key: ${{ secrets.EC2_SSH_KEY }}
+#          source: "backend/start.sh"
+#          target: "/home/ec2-user/dailysync/"
+#          strip_components: 1
 
       - name: SSH and deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -60,9 +82,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             pkill -f 'java -jar' || echo "Nothing to kill"
-            mkdir -p ~/home/ec2-user/dailysync/backend/target/
-            mv ~/app/*.jar ~/home/ec2-user/dailysync/backend/target/app.jar
-            mv ~/app/.env ~/home/ec2-user/dailysync/backend/target/.env
-            cd ~//home/ec2-user/dailysync/backend/target/
+            cd /home/ec2-user/dailysync
+            mkdir -p backend/target
+            mv DailySync-0.0.1-SNAPSHOT.jar backend/target/app.jar
+            mv .env backend/target/.env
+            cd backend/target
             nohup java -jar app.jar > app.log 2>&1 &
+      
 
