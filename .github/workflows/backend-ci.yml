@@ -73,7 +73,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/start.sh"
           target: "/home/ec2-user/dailysync/"
-          strip_components: 1
+
 
       - name: Verify Deployment Directory and Files
         uses: appleboy/ssh-action@master
