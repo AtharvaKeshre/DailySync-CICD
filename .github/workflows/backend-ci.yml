@@ -49,7 +49,12 @@ jobs:
           echo "DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}" >> .env
 
       - name: Run docker container with env file
-        run: docker run -d -p 8080:8080 --env-file .env --name springboot-example-container atharvakeshre08/springboot-example
+        run: |
+          docker run -d -p 8080:8080 \
+            --env-file .env \
+            -v $(pwd)/.env:/app/.env \
+            --name springboot-example-container \
+            atharvakeshre08/springboot-example
 
 
 
