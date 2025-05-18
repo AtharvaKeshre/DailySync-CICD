@@ -32,6 +32,16 @@ jobs:
       - name: Publish image to docker hub
         run: docker push atharvakeshre08/springboot-example:latest
 
+
+
+
+  deploy:
+    needs: build
+    runs-on: [ aws-ec2 ]
+    steps:
+      - name: Clean up any existing .env
+        run: |
+          [ -d .env ] && rm -rf .env
       - name: Create .env file from GitHub Secrets
         run: |
           cat > .env <<EOF
@@ -49,15 +59,12 @@ jobs:
           DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
           DATABASE_ACTIVE=${{ secrets.DATABASE_ACTIVE }}
 
-
-  deploy:
-    needs: build
-    runs-on: [ aws-ec2 ]
-    steps:
       - name: Pull Image from docker hub
         run: docker pull atharvakeshre08/springboot-example:latest
+
       - name: Delete old container
         run: docker rm -f springboot-example-container
+
       - name: Run Docker container with mounted .env
         run: |
           docker run -d -p 8080:8080 \
