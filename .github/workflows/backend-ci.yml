@@ -32,6 +32,7 @@ jobs:
       - name: Publish image to docker hub
         run: docker push atharvakeshre08/springboot-example:latest
 
+
       - name: Create .env file
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
